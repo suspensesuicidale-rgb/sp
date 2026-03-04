@@ -1,21 +1,31 @@
-# Dodaj bibliotekę obsługującą zarządzanie kontami
-Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+function Test-UserPassword {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Username,
+        [Parameter(Mandatory=$true)]
+        [System.Security.SecureString]$Password,
+        [string]$DC = "DC01.TwojaDomena.local"
+    )
 
-# Ustawienia
-$Domain = "TWOJA_DOMENA.LOCAL"
-$Username = "login_uzytkownika"
-$Password = "haslo_do_sprawdzenia"
+    # Konwersja SecureString na zwykły tekst dla LDAP bind
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+    $PlainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
 
-# Utwórz kontekst domeny
-$Context = New-Object System.DirectoryServices.AccountManagement.PrincipalContext([System.DirectoryServices.AccountManagement.ContextType]::Domain, $Domain)
+    $Path = "LDAP://$DC"
+    $Entry = New-Object System.DirectoryServices.DirectoryEntry($Path, $Username, $PlainPassword, "Secure")
 
-# Spróbuj zweryfikować
-$IsValid = $Context.ValidateCredentials($Username, $Password)
-
-if ($IsValid) {
-    Write-Host "Hasło jest poprawne!" -ForegroundColor Green
-} else {
-    Write-Host "Hasło jest błędne lub konto jest zablokowane." -ForegroundColor Red
+    try {
+        $Entry.Bind()
+        return $true # Hasło poprawne
+    }
+    catch {
+        return $false # Hasło błędne lub inne problemy
+    }
+    finally {
+        # Zawsze zwalniamy zasoby, niezależnie od wyniku
+        $Entry.Dispose()
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+    }
 }
 
 
