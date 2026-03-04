@@ -17,3 +17,19 @@ if ($IsValid) {
 } else {
     Write-Host "Hasło jest błędne lub konto jest zablokowane." -ForegroundColor Red
 }
+
+
+
+
+$User = "TwojLoginDomenowy"
+$Pass = "TwojeHaslo"
+$LDAPPath = "LDAP://DC01.TWOJA_DOMENA.LOCAL"
+
+try {
+    $Entry = New-Object System.DirectoryServices.DirectoryEntry($LDAPPath, $User, $Pass)
+    $NativeObject = $Entry.psbase.NativeObject
+    Write-Host "Połączenie nawiązane - LDAP działa!" -ForegroundColor Green
+}
+catch {
+    Write-Host "Błąd połączenia LDAP: $_" -ForegroundColor Red
+}
